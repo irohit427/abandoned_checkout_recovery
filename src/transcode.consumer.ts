@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import { Order, OrderDocument } from './models/order.schema';
 import { Product, ProductDocument } from './models/product.schema';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 @Processor(TRANSCODE_QUEUE)
@@ -19,9 +20,10 @@ export class TranscodeConsumer {
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
     private mailerService: MailerService,
+    private configService: ConfigService,
   ) {}
 
-  async sendMail(order, delay) {
+  async sendMail(order, delay: number | null) {
     const orderId = order._id;
     const productIds = order.products.map((product) => product.product);
     const user = await this.userModel.findById(order.user);
@@ -30,21 +32,24 @@ export class TranscodeConsumer {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: 'sender@example',
+      from: this.configService.get('MAIL_USER'),
       subject: 'Complete Checkout',
       text: `Hi ${user.name}, Please Complete Checkout for ${productsName}`,
     });
     await this.orderModel
       .findByIdAndUpdate(orderId, { retry: order.retry + 1 })
       .exec();
-    await this.transcodeQueue.add(
-      {
-        orderId,
-      },
-      {
-        delay: delay * 1000,
-      },
-    );
+
+    if (delay) {
+      await this.transcodeQueue.add(
+        {
+          orderId,
+        },
+        {
+          delay: delay * 1000,
+        },
+      );
+    }
   }
 
   @Process()
@@ -52,13 +57,15 @@ export class TranscodeConsumer {
     const data: any = job.data;
     const { orderId } = data;
     const order = await this.orderModel.findById(orderId);
-    console.log(order._id);
+
     if (!order.isPaid) {
       if (order.retry == 0) {
         this.sendMail(order, 86400);
       }
       if (order.retry == 1) {
         this.sendMail(order, 2 * 86400);
+      } else {
+        this.sendMail(order, null);
       }
     }
   }

@@ -20,10 +20,6 @@ export class AppService {
     private readonly productModel: Model<ProductDocument>,
   ) {}
 
-  getHello(): string {
-    return 'Hello World!';
-  }
-
   async transcode(body: any) {
     const { event, orderId } = body;
     if (event === 'checkout.failure') {
