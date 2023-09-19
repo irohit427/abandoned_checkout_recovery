@@ -3,8 +3,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TranscodeConsumer } from './transcode.consumer';
-import { TRANSCODE_QUEUE } from './constants';
+import { OrderConsumer } from './order.consumer';
+import { ORDER_QUEUE } from './constants';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './models/user.schema';
 import { Product, ProductSchema } from './models/product.schema';
@@ -37,7 +37,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
       inject: [ConfigService],
     }),
     BullModule.registerQueue({
-      name: TRANSCODE_QUEUE,
+      name: ORDER_QUEUE,
     }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
@@ -55,6 +55,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService, TranscodeConsumer],
+  providers: [AppService, OrderConsumer],
 })
 export class AppModule {}

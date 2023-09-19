@@ -12,9 +12,9 @@ export class AppController {
     return this.appService.createUser(dto);
   }
 
-  @Post('transcode')
-  async transcode(@Body() dto: any) {
-    return this.appService.transcode(dto);
+  @Post('checkout')
+  async checkout(@Body() dto: any) {
+    return this.appService.checkout(dto);
   }
 
   @Post('product')

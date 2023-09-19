@@ -1,7 +1,7 @@
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { Job, Queue } from 'bull';
-import { TRANSCODE_QUEUE } from './constants';
+import { ORDER_QUEUE } from './constants';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './models/user.schema';
 import { Model } from 'mongoose';
@@ -11,10 +11,10 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-@Processor(TRANSCODE_QUEUE)
-export class TranscodeConsumer {
+@Processor(ORDER_QUEUE)
+export class OrderConsumer {
   constructor(
-    @InjectQueue(TRANSCODE_QUEUE) private readonly transcodeQueue: Queue,
+    @InjectQueue(ORDER_QUEUE) private readonly orderQueue: Queue,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     @InjectModel(Product.name)
@@ -36,12 +36,13 @@ export class TranscodeConsumer {
       subject: 'Complete Checkout',
       text: `Hi ${user.name}, Please Complete Checkout for ${productsName}`,
     });
+
     await this.orderModel
       .findByIdAndUpdate(orderId, { retry: order.retry + 1 })
       .exec();
 
     if (delay) {
-      await this.transcodeQueue.add(
+      await this.orderQueue.add(
         {
           orderId,
         },
@@ -53,7 +54,7 @@ export class TranscodeConsumer {
   }
 
   @Process()
-  async transcode(job: Job<unknown>) {
+  async order(job: Job<unknown>) {
     const data: any = job.data;
     const { orderId } = data;
     const order = await this.orderModel.findById(orderId);

@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bull';
-import { TRANSCODE_QUEUE } from './constants';
+import { ORDER_QUEUE } from './constants';
 import { UserDto } from './dto/user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -13,17 +13,17 @@ import { Order, OrderDocument } from './models/order.schema';
 @Injectable()
 export class AppService {
   constructor(
-    @InjectQueue(TRANSCODE_QUEUE) private readonly transcodeQueue: Queue,
+    @InjectQueue(ORDER_QUEUE) private readonly orderQueue: Queue,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
   ) {}
 
-  async transcode(body: any) {
+  async checkout(body: any) {
     const { event, orderId } = body;
     if (event === 'checkout.failure') {
-      await this.transcodeQueue.add(
+      await this.orderQueue.add(
         {
           orderId,
         },

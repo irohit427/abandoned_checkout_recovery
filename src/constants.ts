@@ -1,1 +1,1 @@
-export const TRANSCODE_QUEUE = 'transcode';
+export const ORDER_QUEUE = 'order';
